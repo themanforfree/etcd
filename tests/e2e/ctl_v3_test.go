@@ -199,6 +199,7 @@ func withFlagByEnv() ctlOption {
 }
 
 func testCtl(t *testing.T, testFunc func(ctlCtx), opts ...ctlOption) {
+	// 通过二进制文件初始化 客户端 和 服务端集群，然后通过客户端运行testFunc
 	testCtlWithOffline(t, testFunc, nil, opts...)
 }
 
@@ -213,7 +214,7 @@ func getDefaultCtlCtx(t *testing.T) ctlCtx {
 func testCtlWithOffline(t *testing.T, testFunc func(ctlCtx), testOfflineFunc func(ctlCtx), opts ...ctlOption) {
 	e2e.BeforeTest(t)
 
-	ret := getDefaultCtlCtx(t)
+	ret := getDefaultCtlCtx(t) // 初始化客户端
 	ret.applyOpts(opts)
 
 	if !ret.quorum {
@@ -230,7 +231,7 @@ func testCtlWithOffline(t *testing.T, testFunc func(ctlCtx), testOfflineFunc fun
 		ret.cfg.KeepDataDir = true
 	}
 
-	epc, err := e2e.NewEtcdProcessCluster(t, &ret.cfg)
+	epc, err := e2e.NewEtcdProcessCluster(t, &ret.cfg) // 初始化集群
 	if err != nil {
 		t.Fatalf("could not start etcd process cluster (%v)", err)
 	}

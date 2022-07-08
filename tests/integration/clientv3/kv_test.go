@@ -28,7 +28,7 @@ import (
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/api/v3/version"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	integration2 "go.etcd.io/etcd/tests/v3/framework/integration"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -490,14 +490,14 @@ func TestKVGetRetry(t *testing.T) {
 	// could give no other endpoints for client reconnection
 	fIdx := (clus.WaitLeader(t) + 1) % clusterSize
 
-	kv := clus.Client(fIdx)
+	kv := clus.Client(fIdx) // 非 Leader 客户端
 	ctx := context.TODO()
 
 	if _, err := kv.Put(ctx, "foo", "bar"); err != nil {
 		t.Fatal(err)
 	}
 
-	clus.Members[fIdx].Stop(t)
+	clus.Members[fIdx].Stop(t) // 停止当前客户端连接的 Server
 
 	donec := make(chan struct{}, 1)
 	go func() {
