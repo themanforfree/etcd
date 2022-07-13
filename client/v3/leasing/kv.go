@@ -296,20 +296,24 @@ func (lkv *leasingKV) get(ctx context.Context, op v3.Op) (*v3.GetResponse, error
 	do := func() (*v3.GetResponse, error) {
 		r, err := lkv.kv.Do(ctx, op)
 		return r.Get(), err
-	}
+	} // a function handled by server
+
 	if !lkv.readySession() {
 		return do()
 	}
 
 	if resp, ok := lkv.leases.Get(ctx, op); resp != nil {
+		// try get by cache
 		return resp, nil
 	} else if !ok || op.IsSerializable() {
+		// failed get by cache
 		// must be handled by server or can skip linearization
 		return do()
 	}
 
 	key := string(op.KeyBytes())
 	if !lkv.leases.MayAcquire(key) {
+		// if this key is  not acquired
 		resp, err := lkv.kv.Do(ctx, op)
 		return resp.Get(), err
 	}
