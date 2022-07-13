@@ -202,12 +202,15 @@ func TestLeasingGetNoLeaseTTL(t *testing.T) {
 	testutil.AssertNil(t, err)
 	defer closeLKV()
 
+	// grant a lease
 	lresp, err := clus.Client(0).Grant(context.TODO(), 60)
 	testutil.AssertNil(t, err)
 
+	// put k v with lease by clus.Client
 	_, err = clus.Client(0).Put(context.TODO(), "k", "v", clientv3.WithLease(lresp.ID))
 	testutil.AssertNil(t, err)
 
+	// get this k by leasing KV, acquire ownership
 	gresp, err := lkv.Get(context.TODO(), "k")
 	testutil.AssertNil(t, err)
 	assert.Equal(t, len(gresp.Kvs), 1)
@@ -215,7 +218,7 @@ func TestLeasingGetNoLeaseTTL(t *testing.T) {
 	clus.Members[0].Stop(t)
 
 	ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-	_, err = lkv.Get(ctx, "k")
+	_, err = lkv.Get(ctx, "k") // deadlineExceededError
 	cancel()
 	assert.Equal(t, err, ctx.Err())
 }
@@ -560,7 +563,7 @@ func TestLeasingOwnerPutResponse(t *testing.T) {
 	if _, err = clus.Client(0).Put(context.TODO(), "k", "abc"); err != nil {
 		t.Fatal(err)
 	}
-	_, gerr := lkv.Get(context.TODO(), "k")
+	_, gerr := lkv.Get(context.TODO(), "k") // acquire ownership
 	if gerr != nil {
 		t.Fatal(gerr)
 	}
@@ -602,8 +605,10 @@ func TestLeasingTxnOwnerGetRange(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := lkv.Get(context.TODO(), "k-"); err != nil {
+	r, err := lkv.Get(context.TODO(), "k-")
+	if err != nil {
 		t.Fatal(err)
+		t.Log(r)
 	}
 
 	tresp, terr := lkv.Txn(context.TODO()).Then(clientv3.OpGet("k-", clientv3.WithPrefix())).Commit()

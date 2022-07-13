@@ -63,8 +63,8 @@ func TestLeaseGrantTimeToLive(t *testing.T) {
 
 			testutils.ExecuteUntil(ctx, t, func() {
 				ttl := int64(10)
-				leaseResp, err := cc.Grant(ttl)
-				require.NoError(t, err)
+				leaseResp, err := cc.Grant(ttl) // grant a lease with 10s ttl
+				require.NoError(t, err)         // it should be no err
 
 				ttlResp, err := cc.TimeToLive(leaseResp.ID, config.LeaseOption{})
 				require.NoError(t, err)
@@ -153,21 +153,21 @@ func TestLeaseGrantTimeToLiveExpired(t *testing.T) {
 			cc := clus.Client()
 
 			testutils.ExecuteUntil(ctx, t, func() {
-				leaseResp, err := cc.Grant(2)
+				leaseResp, err := cc.Grant(2) // grant lease
 				require.NoError(t, err)
 
-				err = cc.Put("foo", "bar", config.PutOptions{LeaseID: leaseResp.ID})
+				err = cc.Put("foo", "bar", config.PutOptions{LeaseID: leaseResp.ID}) // put with lease
 				require.NoError(t, err)
 
 				getResp, err := cc.Get("foo", config.GetOptions{})
 				require.NoError(t, err)
 				require.Equal(t, int64(1), getResp.Count)
 
-				time.Sleep(3 * time.Second)
+				time.Sleep(3 * time.Second) // wait the lease expired
 
-				ttlResp, err := cc.TimeToLive(leaseResp.ID, config.LeaseOption{})
+				ttlResp, err := cc.TimeToLive(leaseResp.ID, config.LeaseOption{}) // check the information of the lease
 				require.NoError(t, err)
-				require.Equal(t, int64(-1), ttlResp.TTL)
+				require.Equal(t, int64(-1), ttlResp.TTL) // it should be -1 ,because it is expired
 
 				getResp, err = cc.Get("foo", config.GetOptions{})
 				require.NoError(t, err)
