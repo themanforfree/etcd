@@ -134,6 +134,7 @@ func watchTest(cx ctlCtx) {
 	for i, tt := range tests {
 		donec := make(chan struct{})
 		go func(i int, puts []kv) {
+			// 通过 goroutine put 所有 key 和 value
 			for j := range puts {
 				if err := ctlV3Put(cx, puts[j].key, puts[j].val, ""); err != nil {
 					cx.t.Errorf("watchTest #%d-%d: ctlV3Put error (%v)", i, j, err)
@@ -144,6 +145,7 @@ func watchTest(cx ctlCtx) {
 
 		unsetEnv := func() {}
 		if tt.envKey != "" || tt.envRange != "" {
+			// 配置 Env
 			if tt.envKey != "" {
 				os.Setenv("ETCDCTL_WATCH_KEY", tt.envKey)
 				unsetEnv = func() { os.Unsetenv("ETCDCTL_WATCH_KEY") }
@@ -160,11 +162,14 @@ func watchTest(cx ctlCtx) {
 			}
 		}
 		if err := ctlV3Watch(cx, tt.args, tt.wkv...); err != nil {
+			// 开始 watch 并判断返回是否和预期相同
 			if cx.dialTimeout > 0 && !isGRPCTimedout(err) {
 				cx.t.Errorf("watchTest #%d: ctlV3Watch error (%v)", i, err)
 			}
 		}
+		// 取消设置的环境变量
 		unsetEnv()
+		// 等待 gorouting 结束
 		<-donec
 	}
 }

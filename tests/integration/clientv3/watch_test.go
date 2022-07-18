@@ -27,7 +27,7 @@ import (
 	mvccpb "go.etcd.io/etcd/api/v3/mvccpb"
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"go.etcd.io/etcd/api/v3/version"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/server/v3/etcdserver/api/v3rpc"
 	integration2 "go.etcd.io/etcd/tests/v3/framework/integration"
 	"google.golang.org/grpc/metadata"
@@ -626,16 +626,19 @@ func TestWatchRequestProgress(t *testing.T) {
 
 			var watchChans []clientv3.WatchChan
 
+			// 创建多个 watcher
 			for _, prefix := range c.watchers {
 				watchChans = append(watchChans, wc.Watch(context.Background(), prefix, clientv3.WithPrefix()))
 			}
 
+			// put 一个 key，可已被所有 watcher 接受到
 			_, err := wc.Put(context.Background(), "/a", "1")
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			for _, rch := range watchChans {
+				// 从每一个 watche chanel 中读出响应
 				select {
 				case resp := <-rch: // wait for notification
 					if len(resp.Events) != 1 {
@@ -646,12 +649,14 @@ func TestWatchRequestProgress(t *testing.T) {
 				}
 			}
 
+			// put 一个不会被 watcher 接受到的 key
 			// put a value not being watched to increment revision
 			_, err = wc.Put(context.Background(), "x", "1")
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			// 发起 RequestProgress
 			err = wc.RequestProgress(context.Background())
 			if err != nil {
 				t.Fatal(err)
@@ -1030,9 +1035,7 @@ func TestWatchCancelOnServer(t *testing.T) {
 	}
 }
 
-// TestWatchOverlapContextCancel stresses the watcher stream teardown path by
-// creating/canceling watchers to ensure that new watchers are not taken down
-// by a torn down watch stream. The sort of race that's being detected:
+// TestWatchOverlapContextCancel stresses the watcher stream teardown path by creating/canceling watchers to ensure that new watchers are not taken down by a torn down watch stream. The sort of race that's being detected:
 //     1. create w1 using a cancelable ctx with %v as "ctx"
 //     2. cancel ctx
 //     3. watcher client begins tearing down watcher grpc stream since no more watchers

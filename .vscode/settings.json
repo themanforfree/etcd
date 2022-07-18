@@ -1,5 +1,6 @@
 {
     "commentTranslate.hover.enabled": true,
     "commentTranslate.multiLineMerge": true,
-    "commentTranslate.source": "Bing"
+    "commentTranslate.source": "Bing",
+    "commentTranslate.targetLanguage": "zh-CN"
 }

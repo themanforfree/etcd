@@ -1217,6 +1217,7 @@ func TestLeasingDeleteRangeBounds(t *testing.T) {
 	testutil.AssertNil(t, err)
 	defer closeGetKv()
 
+	// put keys and get ownership
 	for _, k := range []string{"j", "m"} {
 		if _, err = clus.Client(0).Put(context.TODO(), k, "123"); err != nil {
 			t.Fatal(err)
@@ -1226,10 +1227,12 @@ func TestLeasingDeleteRangeBounds(t *testing.T) {
 		}
 	}
 
-	if _, err = delkv.Delete(context.TODO(), "k", clientv3.WithPrefix()); err != nil {
+	// del keys by perfix
+	r, err := delkv.Delete(context.TODO(), "k", clientv3.WithPrefix())
+	if err != nil {
 		t.Fatal(err)
 	}
-
+	t.Log(r)
 	// leases still on server?
 	for _, k := range []string{"j", "m"} {
 		resp, geterr := clus.Client(0).Get(context.TODO(), "0/"+k, clientv3.WithPrefix())
@@ -1275,6 +1278,7 @@ func testLeasingDeleteRangeContend(t *testing.T, op clientv3.Op) {
 	testutil.AssertNil(t, err)
 	defer closePutKV()
 
+	// put keys and acqure ownership
 	for i := 0; i < 8; i++ {
 		key := fmt.Sprintf("key/%d", i)
 		if _, err = clus.Client(0).Put(context.TODO(), key, "123"); err != nil {
@@ -1290,19 +1294,26 @@ func testLeasingDeleteRangeContend(t *testing.T, op clientv3.Op) {
 	go func() {
 		defer close(donec)
 		for i := 0; ctx.Err() == nil; i++ {
+			// 持续 put get 直到出现 err
 			key := fmt.Sprintf("key/%d", i%8)
 			putkv.Put(ctx, key, "123")
 			putkv.Get(ctx, key)
 		}
 	}()
 
+	// 执行传入的操作
 	_, delErr := delkv.Do(context.TODO(), op)
+
+	// 取消 goroutine 中的 ctx 使其出错退出
 	cancel()
+
+	// 等待 goroutine 结束
 	<-donec
 	if delErr != nil {
 		t.Fatal(delErr)
 	}
 
+	// 确认 putkv 和 client get 到的内容完全相同
 	// confirm keys on non-deleter match etcd
 	for i := 0; i < 8; i++ {
 		key := fmt.Sprintf("key/%d", i)
@@ -1325,6 +1336,7 @@ func TestLeasingPutGetDeleteConcurrent(t *testing.T) {
 	clus := integration2.NewCluster(t, &integration2.ClusterConfig{Size: 1})
 	defer clus.Terminate(t)
 
+	// 创建 16 个 leasing KV
 	lkvs := make([]clientv3.KV, 16)
 	for i := range lkvs {
 		lkv, closeLKV, err := leasing.NewKV(clus.Client(0), "pfx/")
@@ -1350,6 +1362,7 @@ func TestLeasingPutGetDeleteConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(16)
 	for i := 0; i < 16; i++ {
+		// 16 个 gorouting 使用所有 leasing kv 并行 put/get/del
 		go func() {
 			defer wg.Done()
 			for _, kv := range lkvs {
@@ -1357,8 +1370,7 @@ func TestLeasingPutGetDeleteConcurrent(t *testing.T) {
 			}
 		}()
 	}
-	wg.Wait()
-
+	wg.Wait() // 等待所有 gorouting 退出
 	resp, err := lkvs[0].Get(context.TODO(), "k")
 	if err != nil {
 		t.Fatal(err)
@@ -1827,7 +1839,7 @@ func TestLeasingTxnOwnerPutBranch(t *testing.T) {
 	defer closeLKV()
 
 	n := 0
-	treeOp := makePutTreeOp("tree", &n, 4)
+	treeOp := makePutTreeOp("tree", &n, 4) // 创建深度为 4 的 put tree 操作
 	for i := 0; i < n; i++ {
 		k := fmt.Sprintf("tree/%d", i)
 		if _, err = clus.Client(0).Put(context.TODO(), k, "a"); err != nil {

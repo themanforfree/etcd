@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
-	"go.etcd.io/etcd/client/v3"
+	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/server/v3/embed"
 	integration2 "go.etcd.io/etcd/tests/v3/framework/integration"
 )
@@ -58,6 +58,7 @@ func TestTxnWriteFail(t *testing.T) {
 
 	kv := clus.Client(0)
 
+	// 停止当前客户端连接的集群成员
 	clus.Members[0].Stop(t)
 
 	txnc, getc := make(chan struct{}), make(chan struct{})
@@ -73,11 +74,13 @@ func TestTxnWriteFail(t *testing.T) {
 
 	go func() {
 		defer close(getc)
+		// 等待执行 Txn 的 goroutine 运行完毕或超时
 		select {
 		case <-time.After(5 * time.Second):
 			t.Errorf("timed out waiting for txn fail")
 		case <-txnc:
 		}
+		// 确保 put 操作并未成功
 		// and ensure the put didn't take
 		gresp, gerr := clus.Client(1).Get(context.TODO(), "foo")
 		if gerr != nil {
@@ -88,6 +91,7 @@ func TestTxnWriteFail(t *testing.T) {
 		}
 	}()
 
+	// 等待 get goroutine 运行完毕或超时
 	select {
 	case <-time.After(5 * clus.Members[1].ServerConfig.ReqTimeout()):
 		t.Fatalf("timed out waiting for get")
