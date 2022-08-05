@@ -127,6 +127,7 @@ func checkRangeRequest(r *pb.RangeRequest) error {
 	return nil
 }
 
+// FIXME: xline
 func checkPutRequest(r *pb.PutRequest) error {
 	if len(r.Key) == 0 {
 		return rpctypes.ErrGRPCEmptyKey

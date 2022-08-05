@@ -406,6 +406,7 @@ func WithRange(endKey string) OpOption {
 	return func(op *Op) { op.end = []byte(endKey) }
 }
 
+// FIXME: xline
 // WithFromKey specifies the range of 'Get', 'Delete', 'Watch' requests
 // to be equal or greater than the key in the argument.
 func WithFromKey() OpOption {

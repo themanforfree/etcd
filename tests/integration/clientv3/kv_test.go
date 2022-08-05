@@ -180,6 +180,7 @@ func TestKVPutWithIgnoreLease(t *testing.T) {
 	}
 }
 
+// TODO: xline
 func TestKVPutWithRequireLeader(t *testing.T) {
 	integration2.BeforeTest(t)
 
@@ -287,6 +288,7 @@ func TestKVRange(t *testing.T) {
 	}
 }
 
+// TODO: xline
 func TestKVGetErrConnClosed(t *testing.T) {
 	integration2.BeforeTest(t)
 
@@ -316,6 +318,7 @@ func TestKVGetErrConnClosed(t *testing.T) {
 	}
 }
 
+// TODO: xline
 func TestKVNewAfterClose(t *testing.T) {
 	integration2.BeforeTest(t)
 
