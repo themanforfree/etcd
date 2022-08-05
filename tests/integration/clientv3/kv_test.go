@@ -397,6 +397,7 @@ func TestKVDeleteRange(t *testing.T) {
 	}
 }
 
+// TODO: xline
 func TestKVCompactError(t *testing.T) {
 	integration2.BeforeTest(t)
 
@@ -427,6 +428,7 @@ func TestKVCompactError(t *testing.T) {
 	}
 }
 
+// TODO: xline
 func TestKVCompact(t *testing.T) {
 	integration2.BeforeTest(t)
 
@@ -481,6 +483,7 @@ func TestKVCompact(t *testing.T) {
 	}
 }
 
+// TODO: xline , this is client test
 // TestKVGetRetry ensures get will retry on disconnect.
 func TestKVGetRetry(t *testing.T) {
 	integration2.BeforeTest(t)
@@ -535,6 +538,7 @@ func TestKVGetRetry(t *testing.T) {
 	}
 }
 
+// TODO: xline , this is client test
 // TestKVPutFailGetRetry ensures a get will retry following a failed put.
 func TestKVPutFailGetRetry(t *testing.T) {
 	integration2.BeforeTest(t)
@@ -575,6 +579,7 @@ func TestKVPutFailGetRetry(t *testing.T) {
 	}
 }
 
+// TODO: xline , this is client test
 // TestKVGetCancel tests that a context cancel on a Get terminates as expected.
 func TestKVGetCancel(t *testing.T) {
 	integration2.BeforeTest(t)

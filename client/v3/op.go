@@ -345,6 +345,7 @@ func WithLimit(n int64) OpOption { return func(op *Op) { op.limit = n } }
 // Or the start revision of 'Watch' request.
 func WithRev(rev int64) OpOption { return func(op *Op) { op.rev = rev } }
 
+// TODO: xline
 // WithSort specifies the ordering in 'Get' request. It requires
 // 'WithRange' and/or 'WithPrefix' to be specified too.
 // 'target' specifies the target to sort by: key, version, revisions, value.

@@ -112,9 +112,11 @@ func DeleteRange(kv mvcc.KV, txnWrite mvcc.TxnWrite, dr *pb.DeleteRangeRequest) 
 	return resp, nil
 }
 
+// TODO: xline
 func Range(ctx context.Context, lg *zap.Logger, kv mvcc.KV, txnRead mvcc.TxnRead, r *pb.RangeRequest) (*pb.RangeResponse, error) {
 	trace := traceutil.Get(ctx)
 
+	// init response
 	resp := &pb.RangeResponse{}
 	resp.Header = &pb.ResponseHeader{}
 
@@ -141,11 +143,12 @@ func Range(ctx context.Context, lg *zap.Logger, kv mvcc.KV, txnRead mvcc.TxnRead
 		Count: r.CountOnly,
 	}
 
-	rr, err := txnRead.Range(ctx, r.Key, mkGteRange(r.RangeEnd), ro)
+	rr, err := txnRead.Range(ctx, r.Key, mkGteRange(r.RangeEnd), ro) // read from storage
 	if err != nil {
 		return nil, err
 	}
 
+	// revision filter
 	if r.MaxModRevision != 0 {
 		f := func(kv *mvccpb.KeyValue) bool { return kv.ModRevision > r.MaxModRevision }
 		pruneKVs(rr, f)
@@ -163,6 +166,7 @@ func Range(ctx context.Context, lg *zap.Logger, kv mvcc.KV, txnRead mvcc.TxnRead
 		pruneKVs(rr, f)
 	}
 
+	// TODO: xline sort
 	sortOrder := r.SortOrder
 	if r.SortTarget != pb.RangeRequest_KEY && sortOrder == pb.RangeRequest_NONE {
 		// Since current mvcc.Range implementation returns results
@@ -440,6 +444,7 @@ func mkGteRange(rangeEnd []byte) []byte {
 	return rangeEnd
 }
 
+// TODO: xline
 func pruneKVs(rr *mvcc.RangeResult, isPrunable func(*mvccpb.KeyValue) bool) {
 	j := 0
 	for i := range rr.KVs {
